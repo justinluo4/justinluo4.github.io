@@ -137,7 +137,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled 
       container.appendChild(effect.domElement);
     } else {
       renderer.setClearColor( 0x000000, 0 );
-      //container.appendChild(renderer.domElement);
+      container.appendChild(renderer.domElement);
     }
   
     return () => {

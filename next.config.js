@@ -1,7 +1,7 @@
-import type { NextConfig } from 'next';
-import type { Configuration } from 'webpack';
+const { Configuration } = require('webpack');
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   /* config options here */
   output: 'export',
   reactStrictMode: true,
@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config: Configuration) => {
+  webpack: (config) => {
     if (!config.module) {
       config.module = { rules: [] };
     }
@@ -42,4 +42,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

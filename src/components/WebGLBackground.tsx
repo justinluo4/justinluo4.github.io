@@ -127,7 +127,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled 
 
       renderer.setClearColor( 0x000000, 1 ); 
       if (!effectRef.current) {
-        effectRef.current = new AsciiEffect(renderer, 'Wwli:,. ', { invert: false, resolution: 0.15});
+        effectRef.current = new AsciiEffect(renderer, ' .:-=+*#%@', { invert: true, resolution: 0.15});
       }
       const effect = effectRef.current;
       effect.setSize(container.clientWidth, container.clientHeight);

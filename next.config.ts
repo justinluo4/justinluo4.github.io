@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'export',
+  reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -33,6 +35,13 @@ const nextConfig: NextConfig = {
         },
       },
     },
+  },
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.(glsl|vs|fs|vert|frag)$/,
+      use: ['raw-loader', 'glslify-loader'],
+    });
+    return config;
   },
 };
 

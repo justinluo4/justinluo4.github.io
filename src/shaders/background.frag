@@ -2,220 +2,372 @@ uniform float iTime;
 uniform vec2 iResolution;
 uniform float iScroll;
 uniform vec2 iMouse;
-// MIT License
+// CC0: Let's self reflect
+//  Always enjoyed the videos of Platonic solids with inner mirrors
+//  I made some previous attempts but thought I make another attempt it
 
-// Use your mouse to move the camera around! Press the Left Mouse Button on the image to look around!
+// Reducing the alias effects on the inner reflections turned out to be a bit tricky. 
+//  Simplest solution is just to run run fullscreen on a 4K screen ;)
 
-#define DRAG_MULT 0.38 // changes how much waves pull on the water
-#define WATER_DEPTH 1.0 // how deep is the water
-#define CAMERA_HEIGHT 1.5 // how high the camera should be
-#define ITERATIONS_RAYMARCH 12 // waves iterations of raymarching
-#define ITERATIONS_NORMAL 36 // waves iterations when calculating normals
+// Function to generate the solid found here: https://www.shadertoy.com/view/MsKGzw
 
-#define NormalizedMouse (iMouse.xy / iResolution.xy) // normalize mouse coords
+// Tinker with these parameters to create different solids
+// -------------------------------------------------------
+const float rotation_speed= 0.25;
 
-// Calculates wave value and its derivative, 
-// for the wave direction, position in space, wave frequency and time
-vec2 wavedx(vec2 position, vec2 direction, float frequency, float timeshift) {
-  float x = dot(direction, position) * frequency + timeshift;
-  float wave = exp(sin(x) - 1.0);
-  float dx = wave * cos(x);
-  return vec2(wave, -dx);
+const float poly_U        = 1.;   // [0, inf]
+const float poly_V        = 0.5;  // [0, inf]
+const float poly_W        = 1.0;  // [0, inf]
+const int   poly_type     = 3;    // [2, 5]
+const float poly_zoom     = 2.0;
+
+const float inner_sphere  = 1.;
+
+const float refr_index    = 0.9;
+
+#define MAX_BOUNCES2        6
+// -------------------------------------------------------
+
+
+
+#define TIME        iTime
+#define RESOLUTION  iResolution
+#define PI          3.141592654
+#define TAU         (2.0*PI)
+
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+const vec4 hsv2rgb_K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+vec3 hsv2rgb(vec3 c) {
+  vec3 p = abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www);
+  return c.z * mix(hsv2rgb_K.xxx, clamp(p - hsv2rgb_K.xxx, 0.0, 1.0), c.y);
 }
+// License: WTFPL, author: sam hocevar, found: https://stackoverflow.com/a/17897228/418488
+//  Macro version of above to enable compile-time constants
+#define HSV2RGB(c)  (c.z * mix(hsv2rgb_K.xxx, clamp(abs(fract(c.xxx + hsv2rgb_K.xyz) * 6.0 - hsv2rgb_K.www) - hsv2rgb_K.xxx, 0.0, 1.0), c.y))
 
-// Calculates waves by summing octaves of various waves with various parameters
-float getwaves(vec2 position, int iterations) {
-  float wavePhaseShift = length(position) * 0.1; // this is to avoid every octave having exactly the same phase everywhere
-  float iter = 0.0; // this will help generating well distributed wave directions
-  float frequency = 1.0; // frequency of the wave, this will change every iteration
-  float timeMultiplier = 2.0; // time multiplier for the wave, this will change every iteration
-  float weight = 1.0;// weight in final sum for the wave, this will change every iteration
-  float sumOfValues = 0.0; // will store final sum of values
-  float sumOfWeights = 0.0; // will store final sum of weights
-  for(int i=0; i < iterations; i++) {
-    // generate some wave direction that looks kind of random
-    vec2 p = vec2(sin(iter), cos(iter));
-    
-    // calculate wave data
-    vec2 res = wavedx(position, p, frequency, iTime * timeMultiplier + wavePhaseShift);
+#define TOLERANCE2          0.0005
+//#define MAX_RAY_LENGTH2   10.0
+#define MAX_RAY_MARCHES2    50
+#define NORM_OFF2           0.005
+#define BACKSTEP2
 
-    // shift position around according to wave drag and derivative of the wave
-    position += p * res.y * weight * DRAG_MULT;
+#define TOLERANCE3          0.0005
+#define MAX_RAY_LENGTH3     10.0
+#define MAX_RAY_MARCHES3    90
+#define NORM_OFF3           0.005
 
-    // add the results to sums
-    sumOfValues += res.x * weight;
-    sumOfWeights += weight;
+const vec3 rayOrigin    = vec3(0.0, 1., -5.);
+const vec3 sunDir       = normalize(-rayOrigin);
 
-    // modify next octave ;
-    weight = mix(weight, 0.0, 0.2);
-    frequency *= 1.18;
-    timeMultiplier *= 1.07;
 
-    // add some kind of random value to make next wave look random too
-    iter += 1232.399963;
-  }
-  // calculate and return
-  return sumOfValues / sumOfWeights;
-}
+const vec3 sunCol       = HSV2RGB(vec3(0.06 , 0.90, 1E-2))*1.;
+const vec3 bottomBoxCol = HSV2RGB(vec3(0.66, 0.80, 0.5))*1.;
+const vec3 topBoxCol    = HSV2RGB(vec3(0.60, 0.90, 1.))*1.;
+const vec3 glowCol0     = HSV2RGB(vec3(0.05 , 0.7, 1E-3))*1.;
+const vec3 glowCol1     = HSV2RGB(vec3(0.95, 0.7, 1E-3))*1.;
+const vec3 beerCol      = -HSV2RGB(vec3(0.15+0.5, 0.7, 2.)); 
+const float rrefr_index = 1./refr_index;
 
-// Raymarches the ray from top water layer boundary to low water layer boundary
-float raymarchwater(vec3 camera, vec3 start, vec3 end, float depth) {
-  vec3 pos = start;
-  vec3 dir = normalize(end - start);
-  for(int i=0; i < 64; i++) {
-    // the height is from 0 to -depth
-    float height = getwaves(pos.xz, ITERATIONS_RAYMARCH) * depth - depth;
-    // if the waves height almost nearly matches the ray height, assume its a hit and return the hit distance
-    if(height + 0.01 > pos.y) {
-      return distance(pos, camera);
-    }
-    // iterate forwards according to the height mismatch
-    pos += dir * (pos.y - height);
-  }
-  // if hit was not registered, just assume hit the top layer, 
-  // this makes the raymarching faster and looks better at higher distances
-  return distance(start, camera);
-}
 
-// Calculate normal at point by calculating the height at the pos and 2 additional points very close to pos
-vec3 normal(vec2 pos, float e, float depth) {
-  vec2 ex = vec2(e, 0);
-  float H = getwaves(pos.xy, ITERATIONS_NORMAL) * depth;
-  vec3 a = vec3(pos.x, H, pos.y);
-  return normalize(
-    cross(
-      a - vec3(pos.x - e, getwaves(pos.xy - ex.xy, ITERATIONS_NORMAL) * depth, pos.y), 
-      a - vec3(pos.x, getwaves(pos.xy + ex.yx, ITERATIONS_NORMAL) * depth, pos.y + e)
-    )
-  );
-}
+// License: Unknown, author: knighty, found: https://www.shadertoy.com/view/MsKGzw
+const float poly_cospin   = cos(PI/float(poly_type));
+const float poly_scospin  = sqrt(0.75-poly_cospin*poly_cospin);
+const vec3  poly_nc       = vec3(-0.5, -poly_cospin, poly_scospin);
+const vec3  poly_pab      = vec3(0., 0., 1.);
+const vec3  poly_pbc_     = vec3(poly_scospin, 0., 0.5);
+const vec3  poly_pca_     = vec3(0., poly_scospin, poly_cospin);
+const vec3  poly_p        = normalize((poly_U*poly_pab+poly_V*poly_pbc_+poly_W*poly_pca_));
+const vec3  poly_pbc      = normalize(poly_pbc_);
+const vec3  poly_pca      = normalize(poly_pca_);
 
-// Helper function generating a rotation matrix around the axis by the angle
-mat3 createRotationMatrixAxisAngle(vec3 axis, float angle) {
-  float s = sin(angle);
-  float c = cos(angle);
-  float oc = 1.0 - c;
-  return mat3(
-    oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s, 
-    oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s, 
-    oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c
-  );
-}
-
-// Helper function that generates camera ray based on UV and mouse
-vec3 getRay(vec2 fragCoord) {
-  vec2 uv = ((fragCoord.xy / iResolution.xy) * 2.0 - 1.0) * vec2(iResolution.x / iResolution.y, 1.0);
-  // for fisheye, uncomment following line and comment the next one
-  //vec3 proj = normalize(vec3(uv.x, uv.y, 1.0) + vec3(uv.x, uv.y, -1.0) * pow(length(uv), 2.0) * 0.05);  
-  vec3 proj = normalize(vec3(uv.x, uv.y, 1.5));
-  if(iResolution.x < 600.0) {
-    return proj;
-  }
-  return createRotationMatrixAxisAngle(vec3(0.0, -1.0, 0.0), 3.0 * ((NormalizedMouse.x + 0.5) * 2.0 - 1.0)) 
-    * createRotationMatrixAxisAngle(vec3(1.0, 0.0, 0.0), 0.5 + 1.5 * (((NormalizedMouse.y == 0.0 ? 0.27 : NormalizedMouse.y) * 1.0) * 2.0 - 1.5))
-    * proj;
-}
-
-// Ray-Plane intersection checker
-float intersectPlane(vec3 origin, vec3 direction, vec3 point, vec3 normal) { 
-  return clamp(dot(point - origin, normal) / dot(direction, normal), -1.0, 9991999.0); 
-}
-
-// Some very barebones but fast atmosphere approximation
-vec3 extra_cheap_atmosphere(vec3 raydir, vec3 sundir) {
-  //sundir.y = max(sundir.y, -0.07);
-  float special_trick = 1.0 / (raydir.y * 1.0 + 0.1);
-  float special_trick2 = 1.0 / (sundir.y * 11.0 + 1.0);
-  float raysundt = pow(abs(dot(sundir, raydir)), 2.0);
-  float sundt = pow(max(0.0, dot(sundir, raydir)), 8.0);
-  float mymie = sundt * special_trick * 0.2;
-  vec3 suncolor = mix(vec3(1.0), max(vec3(0.0), vec3(1.0) - vec3(5.5, 13.0, 22.4) / 22.4), special_trick2);
-  vec3 bluesky= vec3(5.5, 13.0, 22.4) / 22.4 * suncolor;
-  vec3 bluesky2 = max(vec3(0.0), bluesky - vec3(5.5, 13.0, 22.4) * 0.002 * (special_trick + -6.0 * sundir.y * sundir.y));
-  bluesky2 *= special_trick * (0.24 + raysundt * 0.24);
-  return bluesky2 * (1.0 + 1.0 * pow(1.0 - raydir.y, 3.0));
-} 
-
-// Calculate where the sun should be, it will be moving around the sky
-vec3 getSunDirection() {
-  return normalize(vec3(-0.0773502691896258 , 0.5 + sin(iTime * 0.2 + 2.6) * 0.45 , 0.5773502691896258));
-}
-
-// Get atmosphere color for given direction
-vec3 getAtmosphere(vec3 dir) {
-   return extra_cheap_atmosphere(dir, getSunDirection()) * 0.5;
-}
-
-// Get sun color for given direction
-float getSun(vec3 dir) { 
-  return pow(max(0.0, dot(dir, getSunDirection())), 720.0) * 210.0;
-}
-
-// Great tonemapping function from my other shader: https://www.shadertoy.com/view/XsGfWV
-vec3 aces_tonemap(vec3 color) {  
-  mat3 m1 = mat3(
-    0.59719, 0.07600, 0.02840,
-    0.35458, 0.90834, 0.13383,
-    0.04823, 0.01566, 0.83777
-  );
-  mat3 m2 = mat3(
-    1.60475, -0.10208, -0.00327,
-    -0.53108,  1.10813, -0.07276,
-    -0.07367, -0.00605,  1.07602
-  );
-  vec3 v = m1 * color;  
-  vec3 a = v * (v + 0.0245786) - 0.000090537;
-  vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
-  return pow(clamp(m2 * (a / b), 0.0, 1.0), vec3(1.0 / 2.2));  
-}
-
-// Main
-void main() {
-  // get the ray
-  vec3 ray = getRay(gl_FragCoord.xy);
-  if(ray.y >= 0.0) {
-    // if ray.y is positive, render the sky
-    vec3 C = getAtmosphere(ray) + getSun(ray);
-    gl_FragColor = vec4(aces_tonemap(C * 2.0),1.0);   
-    return;
-  }
-
-  // now ray.y must be negative, water must be hit
-  // define water planes
-  vec3 waterPlaneHigh = vec3(0.0, 0.0, 0.0);
-  vec3 waterPlaneLow = vec3(0.0, -WATER_DEPTH, 0.0);
-
-  // define ray origin, moving around
-  vec3 origin = vec3(iTime * 0.2, CAMERA_HEIGHT, 1) + vec3(iScroll*0.001, 0.0, 0.0)*10.0;
-
-  // calculate intersections and reconstruct positions
-  float highPlaneHit = intersectPlane(origin, ray, waterPlaneHigh, vec3(0.0, 1.0, 0.0));
-  float lowPlaneHit = intersectPlane(origin, ray, waterPlaneLow, vec3(0.0, 1.0, 0.0));
-  vec3 highHitPos = origin + ray * highPlaneHit;
-  vec3 lowHitPos = origin + ray * lowPlaneHit;
-
-  // raymatch water and reconstruct the hit pos
-  float dist = raymarchwater(origin, highHitPos, lowHitPos, WATER_DEPTH);
-  vec3 waterHitPos = origin + ray * dist;
-
-  // calculate normal at the hit position
-  vec3 N = normal(waterHitPos.xz, 0.01, WATER_DEPTH);
-
-  // smooth the normal with distance to avoid disturbing high frequency noise
-  N = mix(N, vec3(0.0, 1.0, 0.0), 0.8 * min(1.0, sqrt(dist*0.01) * 1.1));
-
-  // calculate fresnel coefficient
-  float fresnel = (0.04 + (1.0-0.04)*(pow(1.0 - max(0.0, dot(-N, ray)), 5.0)));
-
-  // reflect the ray and make sure it bounces up
-  vec3 R = normalize(reflect(ray, N));
-  R.y = abs(R.y);
+mat3 g_rot;
+vec2 g_gd;
   
-  // calculate the reflection and approximate subsurface scattering
-  vec3 reflection = getAtmosphere(R) + getSun(R);
-  vec3 scattering = vec3(0.0293, 0.0698, 0.1717) * 0.1 * (0.2 + (waterHitPos.y + WATER_DEPTH) / WATER_DEPTH);
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/noacos/
+mat3 rot(vec3 d, vec3 z) {
+  vec3  v = cross( z, d );
+  float c = dot( z, d );
+  float k = 1.0/(1.0+c);
 
-  // return the combined result
-  vec3 C = fresnel * reflection + scattering;
-  gl_FragColor = vec4(aces_tonemap(C * 2.0), 1.0);
+  return mat3( v.x*v.x*k + c,     v.y*v.x*k - v.z,    v.z*v.x*k + v.y,
+               v.x*v.y*k + v.z,   v.y*v.y*k + c,      v.z*v.y*k - v.x,
+               v.x*v.z*k - v.y,   v.y*v.z*k + v.x,    v.z*v.z*k + c    );
 }
+
+// License: Unknown, author: Matt Taylor (https://github.com/64), found: https://64.github.io/tonemapping/
+vec3 aces_approx(vec3 v) {
+  v = max(v, 0.0);
+  v *= 0.6;
+  float a = 2.51;
+  float b = 0.03;
+  float c = 2.43;
+  float d = 0.59;
+  float e = 0.14;
+  return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0, 1.0);
+}
+
+float sphere(vec3 p, float r) {
+  return length(p) - r;
+}
+
+// License: MIT, author: Inigo Quilez, found: https://iquilezles.org/articles/distfunctions/
+float box(vec2 p, vec2 b) {
+  vec2 d = abs(p)-b;
+  return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+}
+  
+// License: Unknown, author: knighty, found: https://www.shadertoy.com/view/MsKGzw
+void poly_fold(inout vec3 pos) {
+  vec3 p = pos;
+
+  for(int i = 0; i < poly_type; ++i){
+    p.xy  = abs(p.xy);
+    p    -= 2.*min(0., dot(p,poly_nc)) * poly_nc;
+  }
+  
+  pos = p;
+}
+
+float poly_plane(vec3 pos) {
+  float d0 = dot(pos, poly_pab);
+  float d1 = dot(pos, poly_pbc);
+  float d2 = dot(pos, poly_pca);
+  float d = d0;
+  d = max(d, d1);
+  d = max(d, d2);
+  return d;
+}
+
+float poly_corner(vec3 pos) {
+  float d = length(pos) - .0125;
+  return d;
+}
+
+float dot2(vec3 p) {
+  return dot(p, p);
+}
+
+float poly_edge(vec3 pos) {
+  float dla = dot2(pos-min(0., pos.x)*vec3(1., 0., 0.));
+  float dlb = dot2(pos-min(0., pos.y)*vec3(0., 1., 0.));
+  float dlc = dot2(pos-min(0., dot(pos, poly_nc))*poly_nc);
+  return sqrt(min(min(dla, dlb), dlc))-2E-3;
+}
+
+vec3 shape(vec3 pos) {
+  pos *= g_rot;
+  pos /= poly_zoom;
+  poly_fold(pos);
+  pos -= poly_p;
+
+  return vec3(poly_plane(pos), poly_edge(pos), poly_corner(pos))*poly_zoom;
+}
+
+vec3 render0(vec3 ro, vec3 rd) {
+  vec3 col = vec3(0.0);
+  
+  float srd  = sign(rd.y);
+  float tp   = -(ro.y-6.)/abs(rd.y);
+
+  if (srd < 0.) {
+    col += bottomBoxCol*exp(-0.5*(length((ro + tp*rd).xz)));
+  }
+
+  if (srd > 0.0) {
+    vec3 pos  = ro + tp*rd;
+    vec2 pp = pos.xz;
+    float db = box(pp, vec2(5.0, 9.0))-3.0;
+    
+    col += topBoxCol*rd.y*rd.y*smoothstep(0.25, 0.0, db);
+    col += 0.2*topBoxCol*exp(-0.5*max(db, 0.0));
+    col += 0.05*sqrt(topBoxCol)*max(-db, 0.0);
+  }
+
+
+  col += sunCol/(1.001-dot(sunDir, rd));
+  return col; 
+}
+
+float df2(vec3 p) {
+  vec3 ds = shape(p);
+  float d2 = ds.y-5E-3;
+  float d0 = min(-ds.x, d2);
+  float d1 = sphere(p, inner_sphere);
+  g_gd = min(g_gd, vec2(d2, d1));
+  float d = (min(d0, d1));
+  return d;
+}
+
+float rayMarch2(vec3 ro, vec3 rd, float tinit) {
+  float t = tinit;
+#if defined(BACKSTEP2)
+  vec2 dti = vec2(1e10,0.0);
+#endif
+  int i;
+  for (i = 0; i < MAX_RAY_MARCHES2; ++i) {
+    float d = df2(ro + rd*t);
+#if defined(BACKSTEP2)
+    if (d<dti.x) { dti=vec2(d,t); }
+#endif  
+    // Bouncing in a closed shell, will never miss
+    if (d < TOLERANCE2/* || t > MAX_RAY_LENGTH3 */) {
+      break;
+    }
+    t += d;
+  }
+#if defined(BACKSTEP2)
+  if(i==MAX_RAY_MARCHES2) { t=dti.y; };
+#endif  
+  return t;
+}
+
+vec3 normal2(vec3 pos) {
+  vec2  eps = vec2(NORM_OFF2,0.0);
+  vec3 nor;
+  nor.x = df2(pos+eps.xyy) - df2(pos-eps.xyy);
+  nor.y = df2(pos+eps.yxy) - df2(pos-eps.yxy);
+  nor.z = df2(pos+eps.yyx) - df2(pos-eps.yyx);
+  return normalize(nor);
+}
+
+vec3 render2(vec3 ro, vec3 rd, float db) {
+  vec3 agg = vec3(0.0);
+  float ragg = 1.;
+  float tagg = 0.;
+  
+  for (int bounce = 0; bounce < MAX_BOUNCES2; ++bounce) {
+    if (ragg < 0.1) break;
+    g_gd      = vec2(1E3);
+    float t2  = rayMarch2(ro, rd, min(db+0.05, 0.3));
+    vec2 gd2  = g_gd;
+    tagg      += t2;
+    
+    vec3 p2   = ro+rd*t2;
+    vec3 n2   = normal2(p2);
+    vec3 r2   = reflect(rd, n2);
+    vec3 rr2  = refract(rd, n2, rrefr_index);
+    float fre2= 1.+dot(n2,rd);
+    
+    vec3 beer = ragg*exp(0.2*beerCol*tagg);
+    agg += glowCol1*beer*((1.+tagg*tagg*4E-2)*6./max(gd2.x, 5E-4+tagg*tagg*2E-4/ragg));
+    vec3 ocol = 0.2*beer*render0(p2, rr2);
+    if (gd2.y <= TOLERANCE2) {
+      ragg *= 1.-0.9*fre2;
+    } else {
+      agg     += ocol;
+      ragg    *= 0.8;
+    }
+    
+    ro        = p2;
+    rd        = r2;
+    db        = gd2.x; 
+  }
+
+
+  return agg;
+}
+
+float df3(vec3 p) {
+  vec3 ds = shape(p);
+  g_gd = min(g_gd, ds.yz);
+  const float sw = 0.02;
+  float d1 = min(ds.y, ds.z)-sw;
+  float d0 = ds.x;
+  d0 = min(d0, ds.y);
+  d0 = min(d0, ds.z);
+  return d0;
+}
+
+float rayMarch3(vec3 ro, vec3 rd, float tinit, out int iter) {
+  float t = tinit;
+  int i;
+  for (i = 0; i < MAX_RAY_MARCHES3; ++i) {
+    float d = df3(ro + rd*t);
+    if (d < TOLERANCE3 || t > MAX_RAY_LENGTH3) {
+      break;
+    }
+    t += d;
+  }
+  iter = i;
+  return t;
+}
+
+vec3 normal3(vec3 pos) {
+  vec2  eps = vec2(NORM_OFF3,0.0);
+  vec3 nor;
+  nor.x = df3(pos+eps.xyy) - df3(pos-eps.xyy);
+  nor.y = df3(pos+eps.yxy) - df3(pos-eps.yxy);
+  nor.z = df3(pos+eps.yyx) - df3(pos-eps.yyx);
+  return normalize(nor);
+}
+
+vec3 render3(vec3 ro, vec3 rd) {
+  int iter;
+
+  vec3 skyCol = render0(ro, rd);
+  vec3 col  = skyCol;
+
+  g_gd      = vec2(1E3);
+  float t1  = rayMarch3(ro, rd, 0.1, iter);
+  vec2 gd1  = g_gd;
+  vec3 p1   = ro+t1*rd;
+  vec3 n1   = normal3(p1);
+  vec3 r1   = reflect(rd, n1);
+  vec3 rr1  = refract(rd, n1, refr_index);
+  float fre1= 1.+dot(rd, n1);
+  fre1 *= fre1;
+
+  float ifo = mix(0.5, 1., smoothstep(1.0, 0.9, float(iter)/float(MAX_RAY_MARCHES3)));
+
+  if (t1 < MAX_RAY_LENGTH3) {
+    col = render0(p1, r1)*(0.5+0.5*fre1)*ifo;
+    vec3 icol = render2(p1, rr1, gd1.x); 
+    if (gd1.x > TOLERANCE3 && gd1.y > TOLERANCE3 && rr1 != vec3(0.)) {
+      col += icol*(1.-0.75*fre1)*ifo;
+    }
+  }
+
+  col += (glowCol0+1.*fre1*(glowCol0))/max(gd1.x, 3E-4);
+  return col;
+
+}
+
+  
+vec3 effect(vec2 p, vec2 pp) {
+  const float fov = 2.0;
+  
+  const vec3 up = vec3(0., 1., 0.);
+  const vec3 la   = vec3(0.0);
+
+  const vec3 ww = normalize(normalize(la-rayOrigin));
+  const vec3 uu = normalize(cross(up, ww));
+  const vec3 vv = cross(ww, uu);
+  
+  vec3 rd = normalize(-p.x*uu + p.y*vv + fov*ww);
+
+  vec3 col = vec3(0.0);
+  col = render3(rayOrigin, rd);
+  
+  col -= 2E-2*vec3(2.,3.,1.)*(length(p)+0.25);
+  col = aces_approx(col);
+  col = sqrt(col);
+  return col;
+}
+
+void main() {
+  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+  vec2 p = -1. + 2. * q;
+  vec2 pp = p;
+  p.x *= RESOLUTION.x/RESOLUTION.y;
+
+  float a = TIME*rotation_speed;
+  vec3 r0 = vec3(1.0, sin(vec2(sqrt(0.5), 1.0)*a));
+  vec3 r1 = vec3(cos(vec2(sqrt(0.5), 1.0)*0.913*a), 1.0);
+  mat3 rot = rot(normalize(r0), normalize(r1));
+  g_rot = rot;
+
+  vec3 col = effect(p, pp);
+  
+  gl_FragColor = vec4(col, 1.0);
+}
+

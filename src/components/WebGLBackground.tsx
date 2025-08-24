@@ -3,13 +3,22 @@ import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import vertexShader from '@/shaders/background.vert';
-import fragmentShader from '@/shaders/background.frag';
+import initialFragmentShader from '@/shaders/background.frag';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 interface WebGLBackgroundProps {
   isAsciiEffectEnabled: boolean;
+  showShaderEditor: boolean;
+  className?: string;
 }
 
-const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled }) => {
+const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled, showShaderEditor, className }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const effectRef = useRef<AsciiEffect | null>(null);
@@ -18,12 +27,57 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled 
   const meshRef = useRef<THREE.Mesh | null>(null);
   const clock = useRef(new THREE.Clock());
   const isAsciiEnabledRef = useRef(isAsciiEffectEnabled);
+  const [fragmentShader, setFragmentShader] = React.useState(initialFragmentShader);
+  const [shaderError, setShaderError] = React.useState<string | null>(null);
   const pixelRatio = 0.15;
 
   useEffect(() => {
     isAsciiEnabledRef.current = isAsciiEffectEnabled;
     console.log("isAsciiEffectEnabled", isAsciiEnabledRef.current);
   }, [isAsciiEffectEnabled]);
+
+  const recompileShader = () => {
+    if (meshRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
+      try {
+        const material = meshRef.current.material as THREE.ShaderMaterial;
+        
+        // Create new material with updated shader
+        const newMaterial = new THREE.ShaderMaterial({
+          uniforms: material.uniforms,
+          vertexShader,
+          fragmentShader,
+          transparent: true,
+        });
+
+        // Test compilation by trying to render with the new material
+        const oldMaterial = meshRef.current.material;
+        meshRef.current.material = newMaterial;
+        
+        // Attempt to render one frame to trigger shader compilation
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+        
+        // If we get here, compilation was successful
+        if (oldMaterial instanceof THREE.Material) {
+          oldMaterial.dispose();
+        }
+        setShaderError(null);
+        console.log("Shader recompiled successfully");
+        
+      } catch (error) {
+        // If compilation failed, restore original material and show error
+        console.error("Shader compilation error:", error);
+        setShaderError(error instanceof Error ? error.message : "Unknown shader compilation error");
+        
+        // Restore original material if new one failed
+        if (meshRef.current) {
+          const material = meshRef.current.material as THREE.ShaderMaterial;
+          material.fragmentShader = initialFragmentShader;
+          material.needsUpdate = true;
+        }
+      }
+    }
+  };
+
 
   useEffect(() => {
     const container = containerRef.current;
@@ -134,15 +188,50 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled 
       container.appendChild(effect.domElement);
       renderer.setClearColor(0x000000, 1);
     } else {
-      renderer.setPixelRatio(1);
-      (mesh.material as THREE.ShaderMaterial).uniforms.iResolution.value.set(container.clientWidth, container.clientHeight);
+      const defaultPixelRatio = 0.5;
+      renderer.setPixelRatio(defaultPixelRatio);
+      (mesh.material as THREE.ShaderMaterial).uniforms.iResolution.value.set(container.clientWidth * defaultPixelRatio, container.clientHeight * defaultPixelRatio);
       container.appendChild(renderer.domElement);
       
       renderer.setClearColor(0x000000, 0);
     }
   }, [isAsciiEffectEnabled]);
 
-  return <div ref={containerRef} style={{ position: 'fixed', top: '50%', left: '50%', width: '100%', height: '100%', transform: 'translate(-50%, -50%)', zIndex: -1 }} />;
+  return (
+    <>
+      <div 
+        ref={containerRef} 
+        className={className}
+        style={{ 
+          position: 'fixed', 
+          top: '50%', 
+          left: '50%', 
+          width: '100%', 
+          height: '100%', 
+          transform: 'translate(-50%, -50%)', 
+          zIndex: -1 
+        }} 
+      />
+      <Collapsible open={showShaderEditor} className="fixed top-20 right-4 z-50 w-[400px]">
+        <CollapsibleContent className="mt-2">
+            <Textarea
+              value={fragmentShader}
+              onChange={(e) => setFragmentShader(e.target.value)}
+              className="w-full h-96 bg-gray-900 text-white font-mono"
+            />
+            <Button onClick={recompileShader} className="mt-2" variant="outline">
+              Recompile
+            </Button>
+            {shaderError && (
+              <div className="mt-2 p-2 bg-red-800 text-white rounded">
+                <p>Compilation Error:</p>
+                <pre className="whitespace-pre-wrap">{shaderError}</pre>
+              </div>
+            )}
+        </CollapsibleContent>
+      </Collapsible>
+    </>
+  );
 };
 
 export default WebGLBackground;

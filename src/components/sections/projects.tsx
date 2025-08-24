@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Github, ExternalLink } from "lucide-react";
 
 const projects = [
@@ -11,31 +12,35 @@ const projects = [
     image: "https://raw.githubusercontent.com/justinluo4/cs179/refs/heads/main/image.png",
     hint: "abstract geometric",
     github: "https://github.com/justinluo4/cs179",
-    live: "#"
+    live: "#",
+    skills: ["C++", "CUDA", "OpenGL", "GLSL", "Computer Graphics", "Physics"]
   },
   {
-    title: "Fluid Simulation",
-    description: "An interactive 2D fluid simulation using the Smoothed-Particle Hydrodynamics (SPH) method, rendered with OpenGL.",
+    title: "LLM Catan Agent",
+    description: "A Catan agent that uses LLMs to make decisions and interact with the game.",
     image: "https://placehold.co/600x400.png",
     hint: "colorful smoke",
     github: "#",
-    live: "#"
+    live: "#",
+    skills: ["Python", "LLM", "NLP", "AI", "Catan", "Game Theory"]
   },
   {
-    title: "Voxel Engine",
-    description: "A procedural terrain generation engine using voxel data, with support for dynamic chunk loading and optimized rendering.",
-    image: "https://placehold.co/600x400.png",
-    hint: "blocky landscape",
-    github: "#",
-    live: null
-  },
-  {
-    title: "Soft Body Physics",
-    description: "A soft body physics engine using a mass-spring system, allowing for real-time deformation and interaction of 3D objects.",
+    title: "Rigid Body Simulation",
+    description: "A GPU-accelerated analytical rigid body simulation engine using Runge-Kutta methods, allowing for real-time interaction with fixed and spring constraints.",
     image: "https://placehold.co/600x400.png",
     hint: "dynamic cubes",
     github: "#",
-    live: null
+    live: null,
+    skills: ["C++", "CUDA", "OpenGL", "Physics Simulation", "Runge-Kutta Methods", "GPU Acceleration", "Real-time Physics"]
+  },
+  {
+    title: "Personal Website",
+    description: "The website you're currently on! Built with Next.js and Tailwind CSS. Background inspired by Shadertoy.",
+    image: "https://placehold.co/600x400.png",
+    hint: "dynamic cubes",
+    github: "https://github.com/justinluo4/justinluo4.github.io",
+    live: null,
+    skills: ["Next.js", "Tailwind CSS", "GLSL", "WebGL", "React", "TypeScript"]
   },
 ];
 
@@ -54,6 +59,13 @@ export default function Projects() {
             <CardHeader>
               <CardTitle className="font-headline">{project.title}</CardTitle>
               <CardDescription>{project.description}</CardDescription>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {project.skills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="text-xs">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
             </CardHeader>
             <CardContent className="flex justify-center">
               <Image
@@ -66,20 +78,21 @@ export default function Projects() {
               />
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline" asChild>
-                <Link href={project.github} target="_blank">
-                  <Github className="mr-2 h-4 w-4" />
-                  GitHub
-                </Link>
-              </Button>
-              {project.live && (
-                <Button asChild>
+            {project.live && (
+                <Button variant="ghost" asChild>
                   <Link href={project.live} target="_blank">
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Live Demo
                   </Link>
                 </Button>
               )}
+              <Button variant="outline" asChild>
+                <Link href={project.github} target="_blank">
+                  <Github className="mr-2 h-4 w-4" />
+                  GitHub
+                </Link>
+              </Button>
+
             </CardFooter>
           </Card>
         ))}

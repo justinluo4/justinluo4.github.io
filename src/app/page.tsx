@@ -11,18 +11,28 @@ import WebGLBackground from '@/components/WebGLBackground';
 
 export default function Home() {
   const [isAsciiEffectEnabled, setIsAsciiEffectEnabled] = useState(true);
+  const [showShaderEditor, setShowShaderEditor] = useState(false);
 
   const handleToggleAsciiEffect = () => {
     setIsAsciiEffectEnabled(!isAsciiEffectEnabled);
   };
 
+  const handleToggleShaderEditor = () => {
+    setShowShaderEditor(!showShaderEditor);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
-      <WebGLBackground isAsciiEffectEnabled={isAsciiEffectEnabled} />
-      <Header isAsciiEffectEnabled={isAsciiEffectEnabled} onToggleAsciiEffect={handleToggleAsciiEffect} />
+      <WebGLBackground isAsciiEffectEnabled={isAsciiEffectEnabled} showShaderEditor={showShaderEditor} />
+      <Header 
+        isAsciiEffectEnabled={isAsciiEffectEnabled} 
+        onToggleAsciiEffect={handleToggleAsciiEffect}
+        showShaderEditor={showShaderEditor}
+        onToggleShaderEditor={handleToggleShaderEditor}
+      />
       <main className="flex-grow">
         <Hero />
-        <About />
+        {/* <About /> */}
         <Projects />
         <Publications />
         {/* <ContactForm /> */}

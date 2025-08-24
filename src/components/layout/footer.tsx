@@ -6,7 +6,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border/40">
+    <footer className="border-t border-border">
       <div className="container flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>

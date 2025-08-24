@@ -22,7 +22,7 @@ const projects = [
     hint: "colorful smoke",
     github: "#",
     live: "#",
-    skills: ["Python", "LLM", "NLP", "AI", "Catan", "Game Theory"]
+    skills: ["Python", "LLM", "NLP", "Catan", "Game Theory"]
   },
   {
     title: "Rigid Body Simulation",
@@ -31,7 +31,7 @@ const projects = [
     hint: "dynamic cubes",
     github: "#",
     live: null,
-    skills: ["C++", "CUDA", "OpenGL", "Physics Simulation", "Runge-Kutta Methods", "GPU Acceleration", "Real-time Physics"]
+    skills: ["C++", "CUDA", "OpenGL", "Physics Simulation", "GPU Acceleration"]
   },
   {
     title: "Personal Website",
@@ -53,13 +53,14 @@ export default function Projects() {
           A selection of my work in computer graphics and simulation.
         </p>
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {projects.map(project => (
-          <Card key={project.title} className="flex flex-col">
+          <Link href={project.github} target="_blank" key={project.title}>
+            <Card className="flex flex-col transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer border-2">
             <CardHeader>
               <CardTitle className="font-headline">{project.title}</CardTitle>
               <CardDescription>{project.description}</CardDescription>
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-8">
                 {project.skills.map((skill) => (
                   <Badge key={skill} variant="secondary" className="text-xs">
                     {skill}
@@ -67,34 +68,14 @@ export default function Projects() {
                 ))}
               </div>
             </CardHeader>
-            <CardContent className="flex justify-center">
-              <Image
-                src={project.image}
-                alt={`Screenshot of ${project.title}`}
-                width={600}
-                height={400}
-                data-ai-hint={project.hint}
-                className="rounded-lg object-cover aspect-video "
-              />
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-            {project.live && (
-                <Button variant="ghost" asChild>
-                  <Link href={project.live} target="_blank">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Live Demo
-                  </Link>
-                </Button>
-              )}
-              <Button variant="outline" asChild>
-                <Link href={project.github} target="_blank">
-                  <Github className="mr-2 h-4 w-4" />
-                  GitHub
-                </Link>
-              </Button>
 
+            <CardFooter className="flex justify-end">
+              <div className="flex items-center justify-center w-8 h-8 rounded bg-background/50">
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </div>
             </CardFooter>
           </Card>
+          </Link>
         ))}
       </div>
     </section>

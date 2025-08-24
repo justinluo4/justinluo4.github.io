@@ -69,12 +69,8 @@ export default function Hero() {
         </div>
 
       {/* Scroll Arrow */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link href="#about" aria-label="Scroll down">
-            <ChevronDown className="h-6 w-6" />
-          </Link>
-        </Button>
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+        <ChevronDown className="h-6 w-6" />
       </div>
     </section>
   );

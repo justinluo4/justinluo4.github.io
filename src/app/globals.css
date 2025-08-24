@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 43, 40%, 56%;
     --input: 43, 66%, 66%;
-    --ring: 180 100% 40%;
+    --ring: 43, 40%, 56%;
     --radius: 0.5rem;
   }
 }
@@ -34,6 +34,44 @@
   body {
     @apply bg-background text-foreground;
     scroll-behavior: smooth;
+  }
+  
+  /* Set text selection color to match input border */
+  ::selection {
+    background-color: hsl(var(--input));
+    color: hsl(var(--background));
+  }
+  
+  ::-moz-selection {
+    background-color: hsl(var(--input));
+    color: hsl(var(--background));
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar styling */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--input)) hsl(var(--background));
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--input));
+    border-radius: 4px;
+    border: 1px solid hsl(var(--background));
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border));
   }
 }
 

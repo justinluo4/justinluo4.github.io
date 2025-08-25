@@ -32,9 +32,10 @@ export default function Home() {
       />
       <main className="flex-grow">
         <Hero />
-        {/* <About /> */}
+        
         <Projects />
         <Publications />
+        <About />
         {/* <ContactForm /> */}
       </main>
       <Footer />

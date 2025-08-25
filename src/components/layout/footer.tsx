@@ -6,7 +6,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border">
+    <footer className="border-t border-border/40">
       <div className="container flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
@@ -19,11 +19,11 @@ export default function Footer() {
               <Linkedin className="h-5 w-5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          {/* <Button variant="ghost" size="icon" asChild>
             <Link href="https://www.instagram.com/jus.tin.luo/" target="_blank" aria-label="Instagram">
               <Instagram className="h-5 w-5" />
             </Link>
-          </Button>
+          </Button> */}
         </div>
       </div>
     </footer>

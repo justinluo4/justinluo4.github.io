@@ -20,7 +20,7 @@ const projects = [
     description: "A Catan agent that uses LLMs to make decisions and interact with the game.",
     image: "https://placehold.co/600x400.png",
     hint: "colorful smoke",
-    github: "#",
+    github: "/CS_159_Project.pdf",
     live: "#",
     skills: ["Python", "LLM", "NLP", "Catan", "Game Theory"]
   },
@@ -29,7 +29,7 @@ const projects = [
     description: "A GPU-accelerated analytical rigid body simulation engine using Runge-Kutta methods, allowing for real-time interaction with fixed and spring constraints.",
     image: "https://placehold.co/600x400.png",
     hint: "dynamic cubes",
-    github: "#",
+    github: "https://github.com/justinluo4/physsim2",
     live: null,
     skills: ["C++", "CUDA", "OpenGL", "Physics Simulation", "GPU Acceleration"]
   },

@@ -44,12 +44,11 @@ export default function Hero() {
               <Linkedin className="h-5 w-5" />
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          {/* <Button variant="ghost" size="icon" asChild>
             <Link href="https://www.instagram.com/jus.tin.luo/" target="_blank" aria-label="Instagram">
               <Instagram className="h-5 w-5" />
             </Link>
-          </Button>
- {/* Social Icons */}
+          </Button> */}
  </div>
  </div>
 

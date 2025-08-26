@@ -2,6 +2,7 @@ uniform float iTime;
 uniform vec2 iResolution;
 uniform float iScroll;
 uniform vec2 iMouse;
+
 float opSmoothUnion( float d1, float d2, float k )
 {
     float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
@@ -38,32 +39,82 @@ vec3 calcNormal( in vec3 p )
                       k.xxx*map( p + k.xxx*h ) );
 }
 
+
+// https://iquilezles.org/articles/nvscene2008/rwwtt.pdf
+float calcAO( in vec3 pos, in vec3 nor )
+{
+	float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float h = 0.01 + 0.12*float(i)/4.0;
+        float d = map( pos + h*nor );
+        occ += (h-d)*sca;
+        sca *= 0.95;
+        if( occ>0.35 ) break;
+    }
+    return clamp( 1.0 - 3.0*occ, 0.0, 1.0 ) ;
+}
+
+
 void main()
 {
     vec2 uv = gl_FragCoord.xy/iResolution.xy;
-    
-    // screen size is 6m x 6m
-	vec3 rayOri = vec3((uv - 0.5) * vec2(iResolution.x/iResolution.y, 1.0) * 6.0, 3.0);
-	vec3 rayDir = vec3(0.0, 0.0, -1.0);
-	
+    float theta = iScroll/500.0 - 1.6;
+    float c = cos(theta);
+    float s = sin(theta);
+    float d = 12.0;
+    vec3 camPos = vec3(c, 0.0, s) * d;
+    vec3 rayDir = normalize(vec3((uv*2.0 - 1.0) * vec2(iResolution.x/iResolution.y, 1), 3));
+    mat2 rot = mat2(-s, c, -c, -s);
+    rayDir.xz = rot * rayDir.xz;
+    vec3 lightDir = normalize(vec3(3.0, -10.0, 3.0));
 	float depth = 0.0;
 	vec3 p;
-	
+	bool hit = false;
 	for(int i = 0; i < 64; i++) {
-		p = rayOri + rayDir * depth;
+		p = camPos + rayDir * depth;
 		float dist = map(p);
         depth += dist;
-		if (dist < 1e-6) {
+		if (dist < 1e-3) {
+            hit = true;
 			break;
+            
 		}
 	}
 	
-    depth = min(6.0, depth);
+    if(!hit){
+        gl_FragColor = vec4(0.0);
+        return;
+    }
 	vec3 n = calcNormal(p);
-    float b = max(0.0, dot(n, vec3(0.577)));
-    vec3 col = (0.5 + 0.5 * cos((b + iTime * 3.0) + uv.xyx * 2.0 + vec3(0,2,4))) * (0.85 + b * 0.35);
-    col *= exp( -depth * 0.15 );
+    float occ = calcAO(p, n);
+    float b = 0.0;
+    b += max(0.0, dot(n, -lightDir)/2.0);
+    if( hit){
+        vec3 contactPoint = p;
+        float d2 = 0.000001;
+        float shadow = 1.0;
+        for(int i = 0; i < 64; i++) {
+            p = contactPoint - lightDir * d2;
+            float dist = map(p);
+
+            shadow = min(shadow, dist/d2 * 8.0);
+            d2 += clamp( dist, 0.01, 0.2 );
+            if (shadow < 0.004 || d2 > 10.0) {
+                break;
+
+            }
+        }
+        shadow = max(0.2, shadow);
+        b *= occ;
+        b *= shadow;
+    }
+    b += 0.05;
+    vec3 col = vec3(pow(b, 0.6));
+    //col *= exp( -depth * 0.15 );
+    
 	
     // maximum thickness is 2m in alpha channel
-    gl_FragColor = vec4(col, 1.0 - (depth - 0.5) / 2.0);
+    gl_FragColor = vec4(col, hit ? 1.0 : 0.0);
 }

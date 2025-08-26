@@ -94,7 +94,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1);
     cameraRef.current = camera;
 
-    const effect = new AsciiEffect(renderer, ' .-:=+*#%@', { invert: true, resolution: pixelRatio });
+    const effect = new AsciiEffect(renderer, ' .-:*+=#%@', { invert: true, resolution: pixelRatio });
     effect.setSize(container.clientWidth, container.clientHeight);
     effect.domElement.style.color = 'grey';
     effect.domElement.style.backgroundColor = 'transparent';

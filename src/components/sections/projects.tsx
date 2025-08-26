@@ -40,7 +40,7 @@ const projects = [
     hint: "dynamic cubes",
     github: "https://github.com/justinluo4/justinluo4.github.io",
     live: null,
-    skills: ["Next.js", "Tailwind CSS", "GLSL", "WebGL", "React", "TypeScript"]
+    skills: ["Next.js", "Tailwind CSS", "GLSL", "React", "TypeScript"]
   },
 ];
 

@@ -24,13 +24,13 @@ const skills = [
   area: "Graphics",
   subskills: ["CUDA", "GLSL", "OpenGL", "Blender", "cuBLAS"]
 }
-];
+]; 
 
 const experience = [
   {
     role: "Research Internship",
     company: "UCSD Su Lab",
-    period: "Summer 2025",
+    period: "Summer 2025 - Present",
     description: "Engineering algorithms for task-aware mesh decomposition and grasp detection in Maniskill, a comprehensive RL manipulation training library developed by the Su Lab.",
     courses: null
   },
@@ -57,8 +57,15 @@ const experience = [
   {
     role: "Undergraduate Researcher",
     company: "Caltech Perona Vision Lab",
-    period: "Summer 2024",
+    period: "2024 - 2025",
     description: "Researched the novel use of Reinforcement Learning (RL) to generate synthetic datasets for point tracking. Presented at CVPR CV4Animals 2025.",
+    courses: null
+  },
+  {
+    role: "Research Assistant",
+    company: "UCSD Schwartz Center for Computational Neuroscience",
+    period: "2022 - 2023",
+    description: "Researched the novel use of Reinforcement Learning (RL) to generate synthetic datasets for point tracking.",
     courses: null
   },
 ];
@@ -92,7 +99,7 @@ export default function About() {
   return (
     <section id="about" className="container py-24 sm:py-32">
       <div className="relative text-center mb-16">
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">About Me</h2>
+        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">My Experience</h2>
 
       </div>
       <div className="space-y-16">
@@ -124,9 +131,9 @@ export default function About() {
                   <div className="flex-1">
                     <h4 className="font-semibold">{exp.role}</h4>
                     <p className="text-muted-foreground">{exp.company}</p>
-                    {exp.description && (
+                    {/* {exp.description && (
                       <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{exp.description}</p>
-                    )}
+                    )} */}
                     {exp.courses && (
                       <ul className="mt-3 space-y-2">
                         {exp.courses.map((course, courseIndex) => (

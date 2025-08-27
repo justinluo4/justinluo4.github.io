@@ -99,8 +99,10 @@ export default function About() {
   return (
     <section id="about" className="container py-24 sm:py-32">
       <div className="relative text-center mb-16">
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">My Experience</h2>
-
+        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline">About Me</h2>
+        <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
+          I'm passionate about difficult problems in a wide range of fields, from computer graphics to robotics to quantitative finance.
+        </p>
       </div>
       <div className="space-y-16">
         <Card>

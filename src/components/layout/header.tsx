@@ -1,5 +1,6 @@
 "use client"
 import Link from 'next/link';
+import Image from 'next/image';
 import { Code, FileText, Home, Mail, User, Terminal, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,7 +24,13 @@ export default function Header({ isAsciiEffectEnabled, onToggleAsciiEffect, show
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 w-full items-center pl-4 pr-4">
         <Link href="/" className="mr-6 flex items-center space-x-2">
-          <Code className="h-6 w-6 text-primary" />
+          <Image
+            src="/favicon.ico"
+            alt="Website Icon"
+            width={24}
+            height={24}
+            className="h-6 w-6 invert"
+          />
           <span className="font-bold font-headline sm:inline-block">
             Justin Luo
           </span>

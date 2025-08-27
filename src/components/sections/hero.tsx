@@ -54,11 +54,11 @@ export default function Hero() {
 
       <div className="w-full md:w-1/2 flex justify-center md:justify-end">
  <Image
- src="/placeholder-profile.jpg" // Replace with your actual profile picture path
+ src="/profile.png" // Replace with your actual profile picture path
  alt="Profile Picture"
- width={192} // w-48
- height={192} // h-48
- className="rounded-full object-cover"
+ width={256} // w-48
+ height={256} // h-48
+ className="rounded-full object-cover border-2 border-secondary"
  />
  </div>
 

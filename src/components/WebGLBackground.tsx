@@ -206,7 +206,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
           position: 'fixed', 
           top: '50%', 
           left: '50%', 
-          width: '80%', 
+          width: '100%', 
           height: '100%', 
           transform: 'translate(-50%, -50%)', 
           zIndex: -1 

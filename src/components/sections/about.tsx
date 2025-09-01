@@ -83,7 +83,7 @@ const education = [
     degree: "California Institute of Technology",
     school: "Major in Computer Science",
     period: "2023 - 2027",
-    details: "GPA: 4.1/4.0",
+    details: "GPA: 4.04/4.0",
     image: "/caltech.png"
   },
   {
@@ -173,7 +173,7 @@ export default function About() {
                     <h4 className="font-semibold">{edu.degree}</h4>
                     <p className="text-muted-foreground">{edu.school}</p>
                     <p className="text-sm text-muted-foreground mt-1">{edu.details}</p>
-                  </div>
+                  </div> 
                   <span className="text-sm text-muted-foreground">{edu.period}</span>
                 </div>
               </div>

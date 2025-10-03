@@ -3,7 +3,7 @@ import './globals.css';
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
 
-import WebGLBackground from "@/components/WebGLBackground";
+
 export const metadata: Metadata = {
   title: "Justin Luo's Website",
   description: 'Personal portfolio for Justin Luo',
@@ -22,7 +22,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased")}>
-        <WebGLBackground />
         {children}
         <Toaster />
       </body>

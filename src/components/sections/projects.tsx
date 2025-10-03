@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Github, ExternalLink } from "lucide-react";
+import { usePersonalWebsiteHover } from "@/contexts/PersonalWebsiteHoverContext";
 
 const projects = [
   {
@@ -49,6 +50,12 @@ const projects = [
 ];
 
 export default function Projects() {
+  const { setIsHovered } = usePersonalWebsiteHover();
+
+  const handlePersonalWebsiteHover = (isHovered: boolean) => {
+    setIsHovered(isHovered);
+  };
+
   return (
     <section id="projects" className="container py-24 sm:py-32">
       <div className="text-center mb-16">
@@ -58,13 +65,27 @@ export default function Projects() {
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                 {projects.map(project => (
+                {projects.map(project => (
            <Link href={project.github} target="_blank" key={project.title}>
-             <Card className="group relative flex flex-col h-full transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer border-2 overflow-hidden">
+             <Card 
+               className="group relative flex flex-col h-full transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer border-2 overflow-hidden"
+               onMouseEnter={() => {
+                 if (project.title === "Personal Website") {
+                   handlePersonalWebsiteHover(true);
+                 }
+               }}
+               onMouseLeave={() => {
+                 if (project.title === "Personal Website") {
+                   handlePersonalWebsiteHover(false);
+                 }
+               }}
+             >
                {/* Video Background - only show for non-personal website projects */}
                {project.title !== "Personal Website" && (
                  <video
-                   className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"
+                   className={`absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0 ${
+                     project.title === "Self-Implemented LLM" ? "object-contain" : "object-cover"
+                   }`}
                    autoPlay
                    loop
                    muted

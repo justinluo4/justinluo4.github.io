@@ -8,6 +8,7 @@ import Projects from "@/components/sections/projects";
 import Publications from "@/components/sections/publications";
 import ContactForm from "@/components/sections/contact-form";
 import WebGLBackground from '@/components/WebGLBackground';
+import { PersonalWebsiteHoverProvider } from '@/contexts/PersonalWebsiteHoverContext';
 
 export default function Home() {
   const [isAsciiEffectEnabled, setIsAsciiEffectEnabled] = useState(true);
@@ -22,23 +23,25 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <WebGLBackground isAsciiEffectEnabled={isAsciiEffectEnabled} showShaderEditor={showShaderEditor} />
-      <Header 
-        isAsciiEffectEnabled={isAsciiEffectEnabled} 
-        onToggleAsciiEffect={handleToggleAsciiEffect}
-        showShaderEditor={showShaderEditor}
-        onToggleShaderEditor={handleToggleShaderEditor}
-      />
-      <main className="flex-grow">
-        <Hero />
-        
-        <Projects />
-        <Publications />
-        <About />
-        {/* <ContactForm /> */}
-      </main>
-      <Footer />
-    </div>
+    <PersonalWebsiteHoverProvider>
+      <div className="flex flex-col min-h-screen">
+        <WebGLBackground isAsciiEffectEnabled={isAsciiEffectEnabled} showShaderEditor={showShaderEditor} />
+        <Header 
+          isAsciiEffectEnabled={isAsciiEffectEnabled} 
+          onToggleAsciiEffect={handleToggleAsciiEffect}
+          showShaderEditor={showShaderEditor}
+          onToggleShaderEditor={handleToggleShaderEditor}
+        />
+        <main className="flex-grow">
+          <Hero />
+          
+          <Projects />
+          <Publications />
+          <About />
+          {/* <ContactForm /> */}
+        </main>
+        <Footer />
+      </div>
+    </PersonalWebsiteHoverProvider>
   );
 }

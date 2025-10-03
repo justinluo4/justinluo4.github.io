@@ -2,6 +2,7 @@ uniform float iTime;
 uniform vec2 iResolution;
 uniform float iScroll;
 uniform vec2 iMouse;
+uniform float iPersonalWebsiteHover;
 
 float opSmoothUnion( float d1, float d2, float k )
 {
@@ -13,8 +14,12 @@ float sdSphere( vec3 p, float s )
 {
   return length(p)-s;
 } 
-
-float map(vec3 p)
+float sdBox( vec3 p, vec3 b )
+{
+  vec3 q = abs(p) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+}
+float map1(vec3 p)
 {
 	float d = 2.0;
 	for (int i = 0; i < 16; i++) {
@@ -28,7 +33,26 @@ float map(vec3 p)
 	}
 	return d;
 }
+float map2(vec3 p)
+{
+	float d = 2.0;
+	for (int i = 0; i < 16; i++) {
+		float fi = float(i);
+		float time = iTime * (fract(fi * 412.531 + 0.513) - 0.5) * 2.0;
+		d = opSmoothUnion(
+            sdBox(p + sin(time + fi * vec3(52.5126, 64.62744, 632.25)) * vec3(2.0, 2.0, 0.8), vec3(mix(0.5, 1.0, fract(fi * 412.531 + 0.5124)))),
+			d,
+			0.4
+		);
+	}
+	return d;
+}
 
+float map(vec3 p){
+    float alpha= iPersonalWebsiteHover;
+    return mix(map1(p), map2(p), alpha);
+    
+}
 vec3 calcNormal( in vec3 p )
 {
     const float h = 1e-5; // or some other value
@@ -72,7 +96,7 @@ void main()
 	float depth = 0.0;
 	vec3 p;
 	bool hit = false;
-	for(int i = 0; i < 64; i++) {
+	for(int i = 0; i < 128; i++) {
 		p = camPos + rayDir * depth;
 		float dist = map(p);
         depth += dist;

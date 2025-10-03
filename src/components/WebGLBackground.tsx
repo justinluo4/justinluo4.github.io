@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+import { usePersonalWebsiteHover } from '@/contexts/PersonalWebsiteHoverContext';
 import { AsciiEffect } from 'three/examples/jsm/effects/AsciiEffect.js';
 import vertexShader from '@/shaders/background.vert';
 import initialFragmentShader from '@/shaders/background.frag';
@@ -30,11 +31,18 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
   const [fragmentShader, setFragmentShader] = React.useState(initialFragmentShader);
   const [shaderError, setShaderError] = React.useState<string | null>(null);
   const pixelRatio = 0.15;
+  
+  const { isHovered } = usePersonalWebsiteHover();
+  const hoverAnimationRef = useRef({ current: 0, target: 0 });
 
   useEffect(() => {
     isAsciiEnabledRef.current = isAsciiEffectEnabled;
     console.log("isAsciiEffectEnabled", isAsciiEnabledRef.current);
   }, [isAsciiEffectEnabled]);
+
+  useEffect(() => {
+    hoverAnimationRef.current.target = isHovered ? 1.0 : 0.0;
+  }, [isHovered]);
 
   const recompileShader = () => {
     if (meshRef.current && rendererRef.current && sceneRef.current && cameraRef.current) {
@@ -107,6 +115,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
         iResolution: { value: new THREE.Vector2(container.clientWidth * pixelRatio, container.clientHeight * pixelRatio) },
         iScroll: { value: 0.0 },
         iMouse: { value: new THREE.Vector2(0, 0) },
+        iPersonalWebsiteHover: { value: 0.0 },
       },
       vertexShader,
       fragmentShader,
@@ -120,6 +129,13 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       material.uniforms.iTime.value = clock.current.getElapsedTime();
+      
+      // Smooth animation for personal website hover uniform
+      const hoverAnim = hoverAnimationRef.current;
+      const lerpSpeed = 0.05; // Adjust this value to control animation speed
+      hoverAnim.current = THREE.MathUtils.lerp(hoverAnim.current, hoverAnim.target, lerpSpeed);
+      console.log("hoverAnim.current", hoverAnim.current);
+      material.uniforms.iPersonalWebsiteHover.value = hoverAnim.current;
 
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         if (isAsciiEnabledRef.current) {
@@ -188,7 +204,7 @@ const WebGLBackground: React.FC<WebGLBackgroundProps> = ({ isAsciiEffectEnabled,
       container.appendChild(effect.domElement);
       renderer.setClearColor(0x000000, 1);
     } else {
-      const defaultPixelRatio = 0.5;
+      const defaultPixelRatio = 1;
       renderer.setPixelRatio(defaultPixelRatio);
       (mesh.material as THREE.ShaderMaterial).uniforms.iResolution.value.set(container.clientWidth * defaultPixelRatio, container.clientHeight * defaultPixelRatio);
       container.appendChild(renderer.domElement);

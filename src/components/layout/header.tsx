@@ -47,7 +47,12 @@ export default function Header({ isAsciiEffectEnabled, onToggleAsciiEffect, show
             </a>
           ))}
         </nav>
+        
         <div className="flex flex-1 items-center justify-end gap-2">
+          <span className=" sm:inline-block text-foreground/60">
+          Know shaders? Try editing here -&gt;
+          </span>
+
           <Button variant="ghost" size="icon" onClick={onToggleShaderEditor}>
             <Edit className="h-4 w-4" />
           </Button>

@@ -24,7 +24,7 @@ export default function Hero() {
  <Link href="#projects">Projects</Link>
  </Button>
  <Button asChild size="lg" variant="outline">
- <Link href="/Justin_Luo_f2025_july.pdf" download="Justin_Luo_Resume.pdf">My Resume</Link>
+ <Link href="/Justin_Luo_resume_oct2025.pdf" download="Justin_Luo_Resume.pdf">My Resume</Link>
  </Button>
  {/* <Button asChild size="lg" variant="outline">
             <Link href="#contact">Get In Touch</Link>
